@@ -79,5 +79,7 @@ int main(int argc, char** argv)
 
 	mpd_response_finish(g_mpd_connection);
 
+	mpd_connection_free(g_mpd_connection);
+
 	return 0;
 }
