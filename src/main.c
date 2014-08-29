@@ -11,14 +11,53 @@ void print_usage(const char* arg0)
 	printf("randompd version: %s\n\n", VERSION);
 }
 
+int create_connection(const char* host, unsigned port)
+{
+	g_mpd_connection = mpd_connection_new(host, port, 0);
+
+	if (g_mpd_connection == NULL) {
+		fprintf(stderr, "could not allocate mpd connection\n");
+		return 0;
+	}
+
+	return 1;
+}
+
+int close_connection()
+{
+	mpd_connection_free(g_mpd_connection);
+
+	return 1;
+}
+
+int update_file_list()
+{
+	int success = 0;
+	struct mpd_pair* item = 0;
+
+	success = mpd_send_list_all(g_mpd_connection, 0);
+
+	if (!success) {
+		fprintf(stderr, "could not read media library\n");
+		return 0;
+	}
+
+	while ((item = mpd_recv_pair_named(g_mpd_connection, "file"))) {
+		printf("%s\n", item->value);
+		mpd_return_pair(g_mpd_connection, item);
+	}
+
+	mpd_response_finish(g_mpd_connection);
+
+	return 1;
+}
+
 int main(int argc, char** argv)
 {
 	int o = 0;
-	int success = 0;
 	int option_index = 0;
 	const char* mpd_host = 0;
 	unsigned int mpd_port = 0;
-	struct mpd_pair* item = 0;
 
 	static struct option long_options[] =
 	{
@@ -48,7 +87,6 @@ int main(int argc, char** argv)
 			mpd_host = optarg;
 		} else if (o == 'p') {
 			mpd_port = atoi(optarg);
-
 		} else if (o == 'v') {
 			printf("randompd " VERSION " © 2014 Mikkel Kroman\n");
 
@@ -57,29 +95,14 @@ int main(int argc, char** argv)
 			return EXIT_FAILURE;
 		}
 	}
+
+	if (!create_connection(mpd_host, mpd_port))
+		return EXIT_FAILURE;
+
+	if (!update_file_list())
+		return EXIT_FAILURE;
 	
-	g_mpd_connection = mpd_connection_new(mpd_host, mpd_port, 0);
-
-	if (!g_mpd_connection) {
-		fprintf(stderr, "could not allocate mpd connection\n");
-		return 1;
-	}
-
-	success = mpd_send_list_all(g_mpd_connection, 0);
-
-	if (!success) {
-		fprintf(stderr, "could not read media library\n");
-		return 1;
-	}
-
-	while ((item = mpd_recv_pair_named(g_mpd_connection, "file"))) {
-		printf("%s\n", item->value);
-		mpd_return_pair(g_mpd_connection, item);
-	}
-
-	mpd_response_finish(g_mpd_connection);
-
-	mpd_connection_free(g_mpd_connection);
+	close_connection();
 
 	return 0;
 }

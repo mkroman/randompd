@@ -3,8 +3,8 @@ ifndef PREFIX
 endif
 
 CFLAGS+=-Wall -Werror
-CFLAGS+=-g
-CFLAGS+=
+#CFLAGS+=-g
+CFLAGS+=-O3
 CFLAGS+=-pedantic
 
 VERSION=$(shell git describe --tags --abbrev=0)
