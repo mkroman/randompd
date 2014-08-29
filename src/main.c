@@ -3,77 +3,62 @@
 #include <getopt.h>
 #include <mpd/client.h>
 
-static struct mpd_connection* g_mpd_connection;
+#include "randompd.h"
 
 void print_usage(const char* arg0)
 {
-	printf("Usage: %s [track|artist|album]\n", arg0);
-	printf("randompd version: %s\n\n", RANDOMPD_VERSION);
+	printf("Usage: %s\n", arg0);
+	printf("randompd version: %s\n\n", VERSION);
 }
 
 int main(int argc, char** argv)
 {
-	int choice;
-	while (1)
-	{
-		static struct option long_options[] =
-		{
-			/* Use flags like so:
-			{"verbose",	no_argument,	&verbose_flag, 'V'}*/
-			/* Argument styles: no_argument, required_argument, optional_argument */
-			{"version", no_argument,	0,	'v'},
-			{"help",	no_argument,	0,	'h'},
-			
-			{0,0,0,0}
-		};
-	
-		int option_index = 0;
-	
-		/* Argument parameters:
-			no_argument: " "
-			required_argument: ":"
-			optional_argument: "::" */
-	
-		choice = getopt_long( argc, argv, "vh",
-					long_options, &option_index);
-	
-		if (choice == -1)
-			break;
-	
-		switch( choice )
-		{
-			case 'v':
-				
-				break;
-	
-			case 'h':
-				print_usage(argv[0]);
-				return EXIT_SUCCESS;
-				
-				break;
-	
-			case '?':
-				/* getopt_long will have already printed an error */
-				break;
-	
-			default:
-				/* Not sure how to get here... */
-				return EXIT_FAILURE;
-		}
-	}
-	
-	/* Deal with non-option arguments here */
-	if ( optind < argc )
-	{
-		while ( optind < argc )
-		{
-			
-		}
-	}
-
+	int o = 0;
 	int success = 0;
+	int option_index = 0;
+	const char* mpd_host = 0;
+	unsigned int mpd_port = 0;
+	struct mpd_pair* item = 0;
 
-	g_mpd_connection = mpd_connection_new(0, 0, 0);
+	static struct option long_options[] =
+	{
+		/* Use flags like so:
+		{"verbose",	no_argument,	&verbose_flag, 'V'}*/
+		/* Argument styles: no_argument, required_argument, optional_argument */
+		{"version", no_argument,	0,	'v'},
+		{"help",	no_argument,	0,	'h'},
+		{"host",    optional_argument, 0, 'm'},
+		{"port",    optional_argument, 0, 'p'},
+		
+		{0,0,0,0}
+	};
+
+	while ((o = getopt_long(argc, argv, "vhm:p:", long_options, &option_index)) != -1)
+	{
+		if (o == 'h') {
+			printf("Usage: %s\n", argv[0]);
+			printf("randompd " VERSION " © 2014 Mikkel Kroman\n\n");
+			printf("Options:\n");
+			printf("  -m, --host=<host>  Connect to server on <host>\n");
+			printf("  -p, --port=<port>  Connect to server port <port>\n\n");
+
+			return EXIT_SUCCESS;
+
+		} else if (o == 'm') {
+			mpd_host = optarg;
+		} else if (o == 'p') {
+			mpd_port = atoi(optarg);
+
+		} else if (o == 'v') {
+			printf("randompd " VERSION " © 2014 Mikkel Kroman\n");
+
+			return EXIT_SUCCESS;
+		} else {
+			return EXIT_FAILURE;
+		}
+	}
+	
+	g_mpd_connection = mpd_connection_new(mpd_host, mpd_port, 0);
 
 	if (!g_mpd_connection) {
 		fprintf(stderr, "could not allocate mpd connection\n");
@@ -86,8 +71,6 @@ int main(int argc, char** argv)
 		fprintf(stderr, "could not read media library\n");
 		return 1;
 	}
-
-	struct mpd_pair* item = 0;
 
 	while ((item = mpd_recv_pair_named(g_mpd_connection, "file"))) {
 		printf("%s\n", item->value);

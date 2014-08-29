@@ -2,20 +2,19 @@ ifndef PREFIX
 	PREFIX=/usr
 endif
 
-CFLAGS+=-Wall -Werror -pedantic -g
-LDFLAGS+=-lmpdclient
+CFLAGS+=-Wall -Werror
+CFLAGS+=-g
+CFLAGS+=
+CFLAGS+=-pedantic
 
-REVISION=$(shell git rev-list --count HEAD)
+VERSION=$(shell git describe --tags --abbrev=0)
+GIT_VERSION:="$(shell git describe --tags --always) ($(shell git log --pretty=format:%cd --date=short -n1))"
 OS:=$(shell uname)
+
+LIBS+=-lmpdclient
 
 ifeq ($(OS),Linux)
 CFLAGS+=-DLINUX
-endif
-
-STATIC ?= 0
-ifeq ($(STATIC),1)
-# Build a static binary
-LDFLAGS+=-static
 endif
 
 V ?= 0
@@ -24,7 +23,7 @@ ifeq ($(V),0)
 .SILENT:
 endif
 
-CFLAGS+="-DRANDOMPD_VERSION=\"mpd-r${REVISION}\""
+CFLAGS+=-DVERSION=\"${GIT_VERSION}\"
 
 OBJS:=$(wildcard src/*.c)
 OBJS:=$(OBJS:.c=.o)
