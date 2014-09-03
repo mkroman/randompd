@@ -13,11 +13,15 @@ Installation
 
 To build and install a dynamic binary just run `make` and `make install`.
 
-`% make
-% sudo make install`
+```
+% make
+% sudo make install
+```
 
 To build a static binary, make sure you have the libmpdclient static library
 before building.
 
-`% LDFLAGS=-static make
-% sudo make install`
+```
+% LDFLAGS=-static make
+% sudo make install
+```
