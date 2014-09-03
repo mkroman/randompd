@@ -60,10 +60,9 @@ int add_random_track()
 	track_t* track;
 
 	track = &g_track_list.tracks[rand() % g_track_list.size];
-
 	printf("Adding %s\n", track->path);
 
-	return 1;
+	return mpd_send_add(g_mpd_connection, track->path);
 }
 
 int update_file_list()
