@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <string.h>
+#include <sys/time.h>
 #include <mpd/client.h>
 
 #include "randompd.h"
@@ -53,10 +55,23 @@ int close_connection()
 	return 1;
 }
 
+int add_random_track()
+{
+	track_t* track;
+
+	track = &g_track_list.tracks[rand() % g_track_list.size];
+
+	printf("Adding %s\n", track->path);
+
+	return 1;
+}
+
 int update_file_list()
 {
 	int success = 0;
+	track_t* track;
 	struct mpd_pair* item = 0;
+	size_t filename_len;
 
 	success = mpd_send_list_all(g_mpd_connection, 0);
 
@@ -66,9 +81,35 @@ int update_file_list()
 	}
 
 	while ((item = mpd_recv_pair_named(g_mpd_connection, "file"))) {
-		printf("%s\n", item->value);
+		if ((g_track_list.index + 1) > g_track_list.size) {
+			// increase the list size
+			track = realloc(g_track_list.tracks,
+				((g_track_list.size + kTrackListIncrement) * sizeof(track_t)));
+
+			if (track == NULL)
+				return 0;
+
+			g_track_list.tracks = track;
+			g_track_list.size += kTrackListIncrement;
+		}
+
+		filename_len = strlen(item->value);
+
+		track = &g_track_list.tracks[g_track_list.index];
+		track->index = g_track_list.index;
+		track->path = malloc(filename_len + 1);
+
+		strncpy((char*)track->path, item->value, filename_len + 1);
+		
+		g_track_list.index++;
+
 		mpd_return_pair(g_mpd_connection, item);
 	}
+
+	// resize the track list so it fits nice and snug
+	g_track_list.size = g_track_list.index;
+	g_track_list.tracks = (track_t*)realloc(g_track_list.tracks,
+							 (g_track_list.index * sizeof(track_t)));
 
 	mpd_response_finish(g_mpd_connection);
 
@@ -88,7 +129,7 @@ int main(int argc, char** argv)
 		{"verbose",	no_argument,	&verbose_flag, 'V'}*/
 		/* Argument styles: no_argument, required_argument, optional_argument */
 		{"version", no_argument,	0,	'v'},
-		{"help",	no_argument,	0,	'h'},
+		{"help",    no_argument,	0,	'h'},
 		{"host",    optional_argument, 0, 'm'},
 		{"port",    optional_argument, 0, 'p'},
 		
@@ -119,10 +160,22 @@ int main(int argc, char** argv)
 		}
 	}
 
+	struct timeval time;
+	gettimeofday(&time, NULL);
+	srand((time.tv_sec * 1000) + (time.tv_usec / 1000));
+
+	// allocate and initialize the track list
+	g_track_list.tracks = calloc(sizeof(track_t), kTrackListSize);
+	g_track_list.size = kTrackListSize;
+	g_track_list.index = 0;
+
 	if (!create_connection(mpd_host, mpd_port))
 		return EXIT_FAILURE;
 
 	if (!update_file_list())
+		return EXIT_FAILURE;
+
+	if (!add_random_track())
 		return EXIT_FAILURE;
 	
 	close_connection();

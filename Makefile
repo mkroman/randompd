@@ -6,6 +6,7 @@ CFLAGS+=-Wall -Werror
 #CFLAGS+=-g
 CFLAGS+=-O3
 CFLAGS+=-pedantic
+CFLAGS+=-std=c99
 
 VERSION=$(shell git describe --tags --abbrev=0)
 GIT_VERSION:="$(shell git describe --tags --always) ($(shell git log --pretty=format:%cd --date=short -n1))"
