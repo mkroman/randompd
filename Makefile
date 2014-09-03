@@ -37,6 +37,10 @@ randompd: ${OBJS}
 	@echo " LD $@"
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
+static: ${OBJS}
+	@echo " LD $@"
+	$(CC) $(LDFLAGS) -static -o randompd $^ $(LIBS)
+
 clean:
 	rm -f src/*.o
 

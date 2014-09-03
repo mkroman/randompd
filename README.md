@@ -22,6 +22,6 @@ To build a static binary, make sure you have the libmpdclient static library
 before building.
 
 ```
-% LDFLAGS=-static make
+% make static
 % sudo make install
 ```
