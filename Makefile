@@ -48,4 +48,4 @@ distclean: clean
 	rm -f randompd
 
 install:
-	install -m755 randompd $(PREFIX)/bin/randompd
+	install -m644 randompd $(PREFIX)/bin/randompd

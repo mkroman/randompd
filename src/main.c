@@ -62,7 +62,7 @@ int add_random_track()
 	track = &g_track_list.tracks[rand() % g_track_list.size];
 	printf("Adding %s\n", track->path);
 
-	return mpd_send_add(g_mpd_connection, track->path);
+	return mpd_run_add(g_mpd_connection, track->path);
 }
 
 int update_file_list()
@@ -138,7 +138,7 @@ int main(int argc, char** argv)
 	while ((o = getopt_long(argc, argv, "vhm:p:", long_options, &option_index)) != -1)
 	{
 		if (o == 'h') {
-			printf("Usage: %s\n", argv[0]);
+			printf("Usage: %s [num]\n\n", argv[0]);
 			printf("randompd " VERSION " © 2014 Mikkel Kroman\n\n");
 			printf("Options:\n");
 			printf("  -m, --host=<host>  Connect to server on <host>\n");
@@ -174,9 +174,18 @@ int main(int argc, char** argv)
 	if (!update_file_list())
 		return EXIT_FAILURE;
 
-	if (!add_random_track())
-		return EXIT_FAILURE;
-	
+	if (argc > option_index + 1) {
+		int num = atoi(argv[option_index + 1]);
+
+		for (int i = 0; i < num; i++)
+			add_random_track();
+	}
+	else
+	{
+		if (!add_random_track())
+			return EXIT_FAILURE;
+	}
+
 	close_connection();
 
 	return 0;
